@@ -53,7 +53,7 @@ class CombinedOrderedEnumerator < Enumerator
   def map
     elements = process_enums { |enum|
       enum.to_a
-    }.sort
+    }
     yield(elements)
   end
 
@@ -63,20 +63,20 @@ class CombinedOrderedEnumerator < Enumerator
 
       process_enums { |enum|
         enum.lazy.take(n).force
-      }.sort.take(n)
+      }.take(n)
     end
 
     def sorted_array_without_n
       process_enums { |enum|
         enum.to_a
-      }.sort
+      }
     end
 
     def process_enums
       @enumerators.reduce([]) {|element, enum|
         validade_ordered_enum(enum)
         element + yield(enum)
-      }
+      }.sort
     end
 
     def validade_ordered_enum(enum)
