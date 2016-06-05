@@ -28,30 +28,26 @@ class CombinedOrderedEnumerator < Enumerator
   end
 
   attr_reader :enumerators
+  attr_reader :n
 
   def initialize(*enumerators)
     @enumerators = enumerators
 
     super() do |yielder|
+      sorted_array.each do |item|
+        yielder << item
+      end
     end
   end
 
   def take(n)
-    items = []
-    @enumerators.each do |enum|
-      validade_ordered_enum(enum, n)
-      items.concat enum.lazy.take(n).force
-    end
-    items.sort.take(n)
+    @n = n
+    super
   end
 
   def first(n)
-    items = []
-    @enumerators.each do |enum|
-      validade_ordered_enum(enum, n)
-      items.concat enum.lazy.first(n)
-    end
-    items.sort.first(n)
+    @n = n
+    super
   end
 
   def map
@@ -63,12 +59,33 @@ class CombinedOrderedEnumerator < Enumerator
   end
 
   private
-    def ordered?(enum, n)
-      enum.take(n).each_cons(2).all? { |pair| pair.first <= pair.last }
+    def sorted_array
+      return sorted_array_without_n if n.nil?
+
+      items = []
+      @enumerators.each do |enum|
+        validade_ordered_enum(enum, n)
+        items.concat enum.lazy.take(n).force
+      end
+      items.sort.take(n)
     end
 
-    def validade_ordered_enum(enum, n)
+    def sorted_array_without_n
+      items = []
+      @enumerators.each do |enum|
+        validade_ordered_enum(enum)
+        items.concat enum.to_a
+      end
+      items.sort
+    end
+
+    def validade_ordered_enum(enum, n = nil)
       raise UnorderedEnumerator.new(enum) unless ordered?(enum, n)
+    end
+
+    def ordered?(enum, n)
+      array = (n.nil?) ? enum.to_a : enum.take(n)
+      array.each_cons(2).all? { |pair| pair.first <= pair.last }
     end
 end
 
