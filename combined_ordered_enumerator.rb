@@ -31,6 +31,7 @@ class CombinedOrderedEnumerator < Enumerator
 
   def initialize(*enumerators)
     @enumerators = enumerators
+
     super() do |yielder|
     end
   end
@@ -38,31 +39,36 @@ class CombinedOrderedEnumerator < Enumerator
   def take(n)
     items = []
     @enumerators.each do |enum|
-      raise UnorderedEnumerator.new(enum) unless ordered?(enum, n)
-      items.concat enum.lazy.take(n).to_a
+      validade_ordered_enum(enum, n)
+      items.concat enum.lazy.take(n).force
     end
-    items.sort.first(n)
+    items.sort.take(n)
   end
 
   def first(n)
     items = []
     @enumerators.each do |enum|
-      items.concat enum.lazy.first(n).to_a
+      validade_ordered_enum(enum, n)
+      items.concat enum.lazy.first(n)
     end
     items.sort.first(n)
   end
 
-  def map(&block)
+  def map
     items = []
     @enumerators.each do |enum|
       items.concat enum.to_a
     end
-    block.call(items.sort)
+    yield(items.sort)
   end
 
   private
     def ordered?(enum, n)
       enum.take(n).each_cons(2).all? { |pair| pair.first <= pair.last }
+    end
+
+    def validade_ordered_enum(enum, n)
+      raise UnorderedEnumerator.new(enum) unless ordered?(enum, n)
     end
 end
 
