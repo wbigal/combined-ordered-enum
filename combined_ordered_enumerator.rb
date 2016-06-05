@@ -51,31 +51,32 @@ class CombinedOrderedEnumerator < Enumerator
   end
 
   def map
-    items = []
-    @enumerators.each do |enum|
-      items.concat enum.to_a
-    end
-    yield(items.sort)
+    elements = process_enums { |enum|
+      enum.to_a
+    }.sort
+    yield(elements)
   end
 
   private
     def sorted_array
       return sorted_array_without_n if n.nil?
-      items = []
-      @enumerators.each do |enum|
-        validade_ordered_enum(enum)
-        items.concat enum.lazy.take(n).force
-      end
-      items.sort.take(n)
+
+      process_enums { |enum|
+        enum.lazy.take(n).force
+      }.sort.take(n)
     end
 
     def sorted_array_without_n
-      items = []
-      @enumerators.each do |enum|
+      process_enums { |enum|
+        enum.to_a
+      }.sort
+    end
+
+    def process_enums
+      @enumerators.reduce([]) {|element, enum|
         validade_ordered_enum(enum)
-        items.concat enum.to_a
-      end
-      items.sort
+        element + yield(enum)
+      }
     end
 
     def validade_ordered_enum(enum)
