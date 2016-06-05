@@ -19,12 +19,51 @@
 #
 # You can run the test suite with: `ruby combined_ordered_enumerator.rb`.
 class CombinedOrderedEnumerator < Enumerator
-  class UnorderedEnumerator < RuntimeError; end
+  class UnorderedEnumerator < RuntimeError
+    attr_reader :enumerator
 
-  def initialize(*)
+    def initialize(enumerator)
+      @enumerator = enumerator
+    end
+  end
+
+  attr_reader :enumerators
+
+  def initialize(*enumerators)
+    @enumerators = enumerators
     super() do |yielder|
     end
   end
+
+  def take(n)
+    items = []
+    @enumerators.each do |enum|
+      raise UnorderedEnumerator.new(enum) unless ordered?(enum, n)
+      items.concat enum.lazy.take(n).to_a
+    end
+    items.sort.first(n)
+  end
+
+  def first(n)
+    items = []
+    @enumerators.each do |enum|
+      items.concat enum.lazy.first(n).to_a
+    end
+    items.sort.first(n)
+  end
+
+  def map(&block)
+    items = []
+    @enumerators.each do |enum|
+      items.concat enum.to_a
+    end
+    block.call(items.sort)
+  end
+
+  private
+    def ordered?(enum, n)
+      enum.take(n).each_cons(2).all? { |pair| pair.first <= pair.last }
+    end
 end
 
 if $0 == __FILE__
