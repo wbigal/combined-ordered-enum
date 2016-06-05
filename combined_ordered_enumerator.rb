@@ -61,10 +61,9 @@ class CombinedOrderedEnumerator < Enumerator
   private
     def sorted_array
       return sorted_array_without_n if n.nil?
-
       items = []
       @enumerators.each do |enum|
-        validade_ordered_enum(enum, n)
+        validade_ordered_enum(enum)
         items.concat enum.lazy.take(n).force
       end
       items.sort.take(n)
@@ -79,11 +78,11 @@ class CombinedOrderedEnumerator < Enumerator
       items.sort
     end
 
-    def validade_ordered_enum(enum, n = nil)
-      raise UnorderedEnumerator.new(enum) unless ordered?(enum, n)
+    def validade_ordered_enum(enum)
+      raise UnorderedEnumerator.new(enum) unless ordered?(enum)
     end
 
-    def ordered?(enum, n)
+    def ordered?(enum)
       array = (n.nil?) ? enum.to_a : enum.take(n)
       array.each_cons(2).all? { |pair| pair.first <= pair.last }
     end
